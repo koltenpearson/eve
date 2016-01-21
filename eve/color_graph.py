@@ -4,7 +4,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import colors
 import numpy as np
 import math
-import cvutil
+from . import cvutil
 import random
 
 def sample_random_points(array, m, n) :
