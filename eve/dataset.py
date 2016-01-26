@@ -89,3 +89,24 @@ class dataset :
         for i in to_write :
             cv2.imwrite(os.path.join(directory, i.strftime(self.date_format) + self.file_format), self[i])
 
+
+    ##will write out a video composed of all files in dataset as individual frames to given filename
+    # \param fill, if true will use all files, otherwise will only put in modified files
+    # defaults to True
+    def write_video(self, filename, fill=True, fps=20.0) :
+        to_write = []
+        if fill :
+            to_write = self.data
+        else :
+            to_write = list(self.cache.keys())
+            to_write.sort()
+
+        fourcc = cv2.VideoWriter_fourcc(*'XVID') #is there a better format? this will be avi
+        camera = cv2.VideoWriter(filename + '.avi',fourcc, fps, (self[to_write[0]].shape[1], self[to_write[0]].shape[0]))
+
+        for i in to_write :
+            camera.write(self[i])
+
+        camera.release()
+
+        
