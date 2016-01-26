@@ -4,7 +4,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import colors
 import numpy as np
 import math
-from . import cvutil
+import cvutil
 import random
 
 def sample_random_points(array, m, n) :
@@ -48,7 +48,7 @@ def create_color_from_sample(array) :
 
 def main() :
 
-    image_name="ch82.jpg"
+    image_name="../data/basil/front/01-19-16_20-40-00.png"
 
     image = cv2.imread(image_name)
 
