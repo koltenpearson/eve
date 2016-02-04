@@ -43,7 +43,7 @@ class dataset :
         def __iter__(self) :
             return self
 
-        def next(self) :
+        def __next__(self) :
             if self.counter >= len(self.dset) :
                 raise StopIteration
             else :
@@ -51,7 +51,7 @@ class dataset :
                 return self.dset[self.counter - 1]
 
     def __iter__(self) :
-        return dataset_iter(self)
+        return self.dataset_iter(self)
 
     def __len__(self) :
         return len(self.data)
@@ -66,10 +66,17 @@ class dataset :
             self.cache[key] = self._get_array(key.strftime(self.date_format))
         return self.cache[key]
 
+    def __setitem__(self, key, value) :
+        temp = self[key]
+        temp = value
+
 
     ##helper function gets the numpy array from a file
     def _get_array(self, filename) :
         return cv2.imread(os.path.join(self.directory, filename + self.file_format))
+
+    def __len__(self) :
+        return len(self.data)
 
     ##will write out all images with the modifications made to a new directory
     # will create the directory if it does not exist
