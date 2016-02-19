@@ -38,7 +38,7 @@ def poc() :
 
 def poc2() :
 
-    dset = dataset.dataset('data/basil/front')
+    dset = dataset.dataset('data/basil/front', dtype=float)
 
     
     #h, s, v = cv2.split(cv2.cvtColor(dset[1], cv2.COLOR_BGR2HSV))
@@ -46,11 +46,6 @@ def poc2() :
     past = np.copy(dset[1])
     current = np.copy(dset[2])
     future = np.copy(dset[3])
-
-    past = past.astype(float)
-    current = current.astype(float)
-    future = future.astype(float)
-
 
     kernel = np.array([[0,0,0], 
                        [0,18,0], 
@@ -77,6 +72,49 @@ def poc2() :
     mask = np.invert(mask)
     result[mask] = 255 
 
+    dset.set_dtype(np.uint8)
+
     cvutil.comp_images(dset[2], result.astype(np.uint8))
 
-poc2()
+
+def main() :
+
+    current_dset = dataset.dataset('data/basil/front', dtype=float)
+    comp_dset = dataset.dataset('data/basil/front', dtype=float)
+
+
+    kernel = np.array([[0,0,0], 
+                       [0,18,0], 
+                       [0,0,0]], dtype=float)
+
+    time_kernel = np.array([[-1,-1,-1], 
+                            [-1,-1,-1], 
+                            [-1,-1,-1]], dtype=float)
+
+
+    for i in comp_dset :
+        i[...] = cv2.filter2D(i, -1, time_kernel)
+
+    for i in current_dset :
+        i[...] = cv2.filter2D(i, -1, kernel)
+
+    for i in range(1, len(current_dset) -1 ) :
+        current_dset[i] = comp_dset[i-1] + current_dset[i] + comp_dset[i+1] 
+
+        mask = ((current_dset[i] > 100) | (current_dset[i] < -100))
+        current_dset[i][mask] = 0
+
+        mask = (current_dset[i] != 0)
+        current_dset[i][mask] = 255
+
+        mask = ((current_dset[i][:,:,0] == 0) & (current_dset[i][:,:,1] == 0) & (current_dset[i][:,:,2] == 0))
+        mask = np.invert(mask)
+        current_dset[i][mask] = 255 
+
+        current_dset[i] = current_dset[i].astype(np.uint8)
+
+    current_dset.set_dtype(np.uint8)
+
+    current_dset.write_images('movement3')
+
+main()

@@ -12,16 +12,49 @@ import numpy as np
 #TODO maybe add cacheing, seems like it would be a good idea, speed up a lot of operations
 # in fact it will be necessary, I think. so I will add it next
 
+## careful about trying to make in place changes that then reflect on other in place changes with the buffered dataset.
+# the cache is cleared every so often and retrieving it again will revert changes
+# try to not need the intermediate things, or if you do to make intermediate datasets to handle it for now
+class buffered_iterator :
+
+    ##bufsize does not gaurentee that there will strictly be that many in the cache, rather that it will be cleared after that many iterations
+    # feel free to snap elements like index to get the current index in the dset
+    def __init__ (self, dset, filename, bufsize = 100, video = False) :
+        self.dset = dset
+        self.bufsize = bufsize
+        self.video = video
+        self.index = -1
+
+    def __iter__ (self) :
+        return self
+
+    def _flush(self) :
+        dset.write_images(filename)
+        dset._clear_cache()
+
+    def __next__(self) :
+        self.index += 1
+
+        if (self.index >= bufsize) :
+            self._flush()
+
+        if (self.index >= len(dset)) :
+            self_flush()
+            raise StopIteration
+
+        return dset[self.index]
+
 
 class dataset :
 
-    def __init__ (self, directory, file_format=r".png", date_format=r"%m-%d-%y_%H-%M-%S"):
+    def __init__ (self, directory, file_format=r".png", date_format=r"%m-%d-%y_%H-%M-%S", dtype = np.uint8):
 
         self.directory = directory
         self.date_format=date_format
         self.file_format = file_format
         self._initialize_data()
         self.cache = {}
+        self.dtype = dtype
 
     def _initialize_data(self) :
         self.data = []
@@ -33,6 +66,12 @@ class dataset :
 
     def __repr__(self) :
         return "<dataset object from '{}', {} - {}>".format(self.directory, self.data[0].strftime(self.date_format), self.data[-1].strftime(self.date_format))
+
+    def set_dtype(self, dtype) :
+        self.dtype = dtype
+
+    def _clear_cache(self) :
+        self.cache.clear()
 
     class dataset_iter :
 
@@ -64,19 +103,21 @@ class dataset :
 
         if not (key in self.cache) :
             self.cache[key] = self._get_array(key.strftime(self.date_format))
+
+        if (self.cache[key].dtype != self.dtype) :
+            self.cache[key] = self.cache[key].astype(self.dtype)
+
         return self.cache[key]
 
     def __setitem__(self, key, value) :
-        temp = self[key]
-        temp = value
+        if (type(key) == type(0)) :
+            key = self.data[key]
+        self.cache[key] = value
 
 
     ##helper function gets the numpy array from a file
     def _get_array(self, filename) :
         return cv2.imread(os.path.join(self.directory, filename + self.file_format))
-
-    def __len__(self) :
-        return len(self.data)
 
     ##will write out all images with the modifications made to a new directory
     # will create the directory if it does not exist

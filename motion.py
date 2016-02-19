@@ -33,7 +33,7 @@ def pofconcept() :
 # \param a numpy image array like what opencv makes
 #  it will set all values (0, 255) to zero, and all outside of that range to max
 def threshold(im) :
-    mask = ((im > -10) & (im < 10)) # this creates an numpy array of the same shape as boolean values
+    mask = ((im > -20) & (im < 20)) # this creates an numpy array of the same shape as boolean values
     im[mask] = 0
 
     mask = (im != 0)
