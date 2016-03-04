@@ -87,5 +87,50 @@ def poc() :
 
     cvutil.comp_images(result1.astype(np.uint8), result2.astype(np.uint8))
 
-poc()
+def vein_detect() :
 
+    dset = dataset.dataset('data/basil/front', dtype=float)
+
+    big_med = np.array( [  [1, 1, 1, 1 ,1, 1, 1],
+                           [1, 1, 1, 1, 1, 1, 1],
+                           [1, 1, 1, 1, 1, 1, 1],
+                           [1, 1, 1, 0, 1, 1, 1],
+                           [1, 1, 1, 1, 1, 1, 1],
+                           [1, 1, 1, 1, 1, 1, 1],
+                           [1, 1, 1, 1, 1, 1, 1], ], dtype = float)
+
+    big_sharp = np.array( [  [-1, 0, 0, -1 ,0, 0, -1],
+                             [0, -1, 0, -1, 0, -1, 0],
+                             [0, 0, -1, -1, -1, 0, 0],
+                             [-1, -1, -1, 25, -1, -1, -1],
+                             [0, 0, -1, -1, -1, 0, 0],
+                             [0, -1, 0, -1, 0, -1, 0],
+                             [-1, 0, 0, -1, 0, 0, -1], ], dtype = float)
+
+
+
+    big_med *= (1/48)
+
+
+    for image in dset :
+        sharp_image = cv2.filter2D(image, -1, big_sharp)
+        blur_image = cv2.filter2D(image, -1, big_med)
+
+        sharp_image = np.clip(sharp_image, 0, 255)
+        blur_image = np.clip(blur_image, 0, 255)
+        result2 = sharp_image - blur_image
+
+        result2[result2 < -40] = 0 
+        result2[result2 > 40] = 0 
+        result2[result2 != 0] = 255
+
+        mask = (result2[...,0] == 0) & (result2[...,1] == 0) & (result2[...,2] == 0)
+        mask = np.invert(mask)
+        result2[mask] = 255
+
+        image[...] = result2
+
+
+    dset.write_images('edge')
+
+vein_detect()
