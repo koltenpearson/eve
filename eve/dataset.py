@@ -1,16 +1,29 @@
-##This is a dataset object
-# it is a wrapper around a folder of image files
-# it will facilite converting them to and from numpy arrays
-# it will also allow operatoins on the file set at a time
-
 import os
 import re
 from datetime import datetime
 import cv2
 import numpy as np
 
-#TODO maybe add cacheing, seems like it would be a good idea, speed up a lot of operations
-# in fact it will be necessary, I think. so I will add it next
+
+
+class vidset :
+
+    def __init__(self, filename) :
+        self.filename = filename
+        fourcc = cv2.VideoWriter_fourcc(*'XVID') 
+        self.camera_in = cv2.VideoCapture(self.filename)
+
+    def __iter__(self) :
+        return self
+
+    def __len__(self) :
+        return int(self.camera_in.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    def __getitem__(self, key) :
+        self.camera_in.set(cv2.CAP_PROP_POS_FRAMES, key)
+        return self.camera_in.read()[1]
+
+
 
 ## careful about trying to make in place changes that then reflect on other in place changes with the buffered dataset.
 # the cache is cleared every so often and retrieving it again will revert changes
@@ -18,31 +31,56 @@ import numpy as np
 class buffered_iterator :
 
     ##bufsize does not gaurentee that there will strictly be that many in the cache, rather that it will be cleared after that many iterations
-    # feel free to snap elements like index to get the current index in the dset
-    def __init__ (self, dset, filename, bufsize = 100, video = False) :
+    # feel free to snag elements like index to get the current index in the dset
+    # set filename to none if you do not want to save it anywhere
+    def __init__ (self, dset, filename, bufsize = 100, start=0, end_offset=0, video = False, fps=20.0, outtype=None) :
         self.dset = dset
         self.bufsize = bufsize
+        self.bufcount = 0
         self.video = video
-        self.index = -1
+        self.index = start -1
+        self.end = len(dset) - end_offset
+        self.filename = filename
+        self.outtype = outtype
+
+        if (video) :
+            fourcc = cv2.VideoWriter_fourcc(*'XVID') #is there a better format? this will be avi
+            self.camera = cv2.VideoWriter(filename + '.avi',fourcc, fps, (self.dset[0].shape[1], self.dset[0].shape[0]))
+
+
 
     def __iter__ (self) :
         return self
 
     def _flush(self) :
-        dset.write_images(filename)
-        dset._clear_cache()
+        if (self.filename and not self.video) :
+            oldtype = self.dset.dtype
+            if (self.outtype) :
+                self.dset.set_dtype(self.outtype)
+            self.dset.write_images(self.filename)
+
+            self.dset.set_dtype(oldtype)
+
+        self.dset._clear_cache()
 
     def __next__(self) :
+        if (self.video) :
+            self.camera.write(self.dset[self.index])
+
         self.index += 1
+        self.bufcount += 1
 
-        if (self.index >= bufsize) :
+        if (self.bufcount >= self.bufsize) :
             self._flush()
+            self.bufcount = 0
 
-        if (self.index >= len(dset)) :
-            self_flush()
+        if (self.index >= self.end) :
+            self._flush()
             raise StopIteration
+            if (self.video) :
+                self.camera.release()
 
-        return dset[self.index]
+        return self.dset[self.index]
 
 
 class dataset :
