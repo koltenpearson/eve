@@ -3,11 +3,82 @@ import cv2
 from eve import dataset
 from eve import cvutil
 
+antia = np.array( [[1, 2, 4, 2 ,1],
+                       [2, 4, 8, 4, 2],
+                       [4, 8, 16, 8, 4],
+                       [2, 4, 8, 4, 2],
+                       [1, 2, 4, 2, 1]], dtype=float)
+
+big_antia = np.array( [[1, 2, 4, 8 ,4, 2, 1],
+                       [2, 4, 8, 16, 8, 4, 2],
+                       [4, 8, 16, 32, 16, 8, 4],
+                       [8, 16, 32, 64, 32, 16, 8],
+                       [4, 8, 16, 32, 16, 8, 4],
+                       [2, 4, 8, 16, 8, 4, 2],
+                       [1, 2, 4, 8 ,4, 2, 1]], dtype=float)
+
+med = np.array( [   [1,1,1],
+                    [1,0,1],
+                    [1,1,1]], dtype=float)
+
+big_med = np.array( [  [1, 1, 1, 1 ,1, 1, 1],
+                       [1, 1, 1, 1, 1, 1, 1],
+                       [1, 1, 1, 1, 1, 1, 1],
+                       [1, 1, 1, 0, 1, 1, 1],
+                       [1, 1, 1, 1, 1, 1, 1],
+                       [1, 1, 1, 1, 1, 1, 1],
+                       [1, 1, 1, 1, 1, 1, 1], ], dtype = float)
+
+sharp = np.array( [   [0,-1,0],
+                      [-1,5,-1],
+                      [0,-1,0]], dtype=float)
+
+big_sharp = np.array( [  [-1, 0, 0, -1 ,0, 0, -1],
+                         [0, -1, 0, -1, 0, -1, 0],
+                         [0, 0, -1, -1, -1, 0, 0],
+                         [-1, -1, -1, 25, -1, -1, -1],
+                         [0, 0, -1, -1, -1, 0, 0],
+                         [0, -1, 0, -1, 0, -1, 0],
+                         [-1, 0, 0, -1, 0, 0, -1], ], dtype = float)
+med *= (1/8)
+big_med *= (1/48)
+antia *= (1/104)
+big_antia *= (1/np.sum(big_antia))
+
+
+
+def make_vid() :
+
+    vset = dataset.vidset('data/vid_top.avi',fourcc='FFV1')
+
+    image = vset.loop(None, outfile="data/edge")
+
+    while (image is not None) :
+
+        sharp_image = cv2.filter2D(image, -1, big_sharp)
+        blur_image = cv2.filter2D(image, -1, big_med)
+
+        sharp_image = np.clip(sharp_image, 0, 255)
+        blur_image = np.clip(blur_image, 0, 255)
+        result = sharp_image - blur_image
+
+        result[result < -40] = 0 
+        result[result > 40] = 0 
+        result[result != 0] = 255
+
+        mask = (result[...,0] == 0) & (result[...,1] == 0) & (result[...,2] == 0)
+        mask = np.invert(mask)
+        result[mask] = 255
+
+        image = vset.loop(result, verbose=True)
+
+
+
 def poc() :
 
-    dset = dataset.dataset('data/basil/front', dtype=float)
+    dset = dataset.vidset('data/vid_top.avi')
 
-    image = np.copy(dset[1])
+    image = np.copy(dset[1]).astype(float)
 
     antia = np.array( [[1, 2, 4, 2 ,1],
                        [2, 4, 8, 4, 2],
@@ -133,4 +204,4 @@ def vein_detect() :
 
     dset.write_images('edge')
 
-vein_detect()
+make_vid()

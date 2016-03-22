@@ -17,9 +17,11 @@ def main() :
         dset = dataset.dataset(os.path.join(source_root, s))
         final_dest = os.path.join(dest, dest_prefix + s)
 
-        for f in dataset.buffered_iterator(dset, final_dest, video=True, fps=40) :
+        iterator = dataset.buffered_iterator(dset, final_dest, video=True, fps=40) 
+        for f in iterator :
+            dataset.print_status_bar(iterator.index, iterator.end);
             pass
 
-        print("finished " + s)
+        print("\nfinished " + s)
 
 main()

@@ -3,26 +3,83 @@ import re
 from datetime import datetime
 import cv2
 import numpy as np
+import sys
+
+def print_status_bar(current, total, size=100) :
+
+    ratio = current / total
+    amount = int(ratio * size)
+
+    bar = '-' * size
+    completed = '|' * amount
+    sys.stdout.write('\r' + bar + '\r' + completed)
 
 
 
 class vidset :
 
-    def __init__(self, filename) :
+    def __init__(self, filename, fourcc=False) :
         self.filename = filename
-        fourcc = cv2.VideoWriter_fourcc(*'XVID') 
+        if fourcc :
+            self.fourcc = cv2.VideoWriter_fourcc(*fourcc)
+        else :
+            self.fourcc = cv2.VideoWriter_fourcc(*'XVID') 
         self.camera_in = cv2.VideoCapture(self.filename)
-
-    def __iter__(self) :
-        return self
+        self.index = 0
 
     def __len__(self) :
         return int(self.camera_in.get(cv2.CAP_PROP_FRAME_COUNT))
 
     def __getitem__(self, key) :
+        pos = self.camera_in.get(cv2.CAP_PROP_POS_FRAMES)
         self.camera_in.set(cv2.CAP_PROP_POS_FRAMES, key)
-        return self.camera_in.read()[1]
+        result = self.camera_in.read()[1]
+        self.camera_in.set(cv2.CAP_PROP_POS_FRAMES, pos)
+        return result
 
+    def tloop(self, array, outfile = "default", fps=30, verbose = False) : #refractor
+        if array is None :
+            self.index = 1
+            self.camera_in.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            self.camera_out = cv2.VideoWriter(outfile + '.avi', self.fourcc, fps, (self[0].shape[1], self[0].shape[0]))
+            self.buffer = [self.camera_in.read()[1], self.camera_in.read()[1], self.camera_in.read[1]]
+            return tuple(self.buffer)
+
+        if self.index >= len(self) - 1 :
+            del self.buffer
+            return None
+
+        self.camera_out.write(array)
+        self.index += 1
+
+        self.buffer.append(self.camera_in.read()[1])
+        self.buffer.pop(0)
+
+        if (verbose) :
+            print_status_bar(self.index, len(self))
+        return tuple(self.buffer)
+
+    def loop(self, array, outfile = "default", fps=30, start=0, end=-1, verbose = False) :
+        if array is None :
+            self.index = start
+            self.start = start
+            if end == -1 :
+                self.end = len(self)
+            else :
+                self.end = end
+            self.camera_in.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            self.camera_out = cv2.VideoWriter(outfile + '.avi', self.fourcc, fps, (self[0].shape[1], self[0].shape[0]))
+            return self.camera_in.read()[1]
+
+        if self.index >= self.end :
+            del self.end
+            return None
+
+        self.camera_out.write(array)
+        self.index += 1
+        if (verbose) :
+            print_status_bar(self.index, self.end - self.start)
+        return self.camera_in.read()[1]
 
 
 ## careful about trying to make in place changes that then reflect on other in place changes with the buffered dataset.

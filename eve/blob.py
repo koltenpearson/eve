@@ -1,6 +1,7 @@
 import numpy as np
 import math
 
+
 class trace_point :
 
     def __init__(self, x, y) :
@@ -8,6 +9,8 @@ class trace_point :
         self. y = y
 
     def __eq__ (self, other) :
+        if (type(other) == type(())) :
+            other = trace_point(other[0], other[1])
         if (self.x == other.x and self.y == other.y) :
             return True
         else :
@@ -20,7 +23,7 @@ class trace_point :
             return True
 
     def __hash__(self) :
-        return int(str(self.x) +str(self.y))
+        return int(str(self.x).replace('-','0') + str(self.y).replace('-', '0'))
 
     def __add__(self, other) :
         return trace_point(self.x + other.x, self.y + other.y)
@@ -32,6 +35,7 @@ class trace_point :
         return "(" + str(self.x) + " , " + str(self.y) + ")"
 
 
+static_bin = set()
 class trace :
 
     ##okay so x is the x coordint of the seed point, b is the y coordinate of the seed point
@@ -42,10 +46,23 @@ class trace :
 
         self.points = set()
         self.points.add(self.init_p)
+        static_bin.add(self.init_p)
 
     def __len__(self) :
         return len(self.points)
 
+    def __contains__(self, key) :
+        if type(key) == type(()) :
+            key = trace_point(key[0], key[1])
+        return key in self.points
+
+
+    @classmethod 
+    def in_any_traces(classobject, x, y) :
+        return trace_point(x,y) in static_bin
+
+    def clear_all_traces(x, y) :
+        static_bin = set()
 
     def _get_next_delta(self, delta) :
         if (delta == trace_point(-1,-1)) :
@@ -105,6 +122,8 @@ class trace :
             next_point = self._next_point(current_point, temp)
             self.points.add(current_point)
 
+        static_bin.update(self.points)
+
     def fill_bounds(self) :
 
         filled = set()
@@ -118,19 +137,20 @@ class trace :
                     current += dx
 
         self.points = filled
+        static_bin.update(self.points)
 
 
 
 def test_checker(x, y) :
     index = y * 11 + x
 
-    print("checking {}, {}".format(x,y))
+    #print("checking {}, {}".format(x,y))
 
     if (test2[index] == 1) :
-        print("true")
+    #    print("true")
         return True
     else :
-        print("false")
+    #    print("false")
         return False
 
 def test() :

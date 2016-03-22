@@ -3,6 +3,32 @@ import cv2
 from eve import cvutil
 import numpy as np
 
+
+def vid_dense_optical_flow() :
+    dset = dataset.
+
+    prev = cv2.cvtColor(dset[1],cv2.COLOR_BGR2GRAY)
+    canvas = np.zeros_like(dset[1])
+
+    canvas[...,1] = 255
+
+    for i in range(2, len(dset)) :
+        next = cv2.cvtColor(dset[i], cv2.COLOR_BGR2GRAY)
+        flow = cv2.calcOpticalFlowFarneback(prev, next, flow=None, pyr_scale=0.5,levels= 3, winsize=15, iterations=2, poly_n=5, poly_sigma=1.1, flags=0)
+
+        mag, ang = cv2.cartToPolar(flow[...,0], flow[...,1])
+
+        canvas[...,0]  = ang * 180/np.pi/2
+        canvas[...,2] = cv2.normalize(mag, None, 0, 255,cv2.NORM_MINMAX)
+
+        prev = np.copy(next)
+        dset[i] = cv2.cvtColor(np.copy(canvas), cv2.COLOR_HSV2BGR)
+
+
+    dset.write_images('denseflow')
+
+
+
 def dense_optical_flow() :
     dset = dataset.dataset('data/basil/front')
 
