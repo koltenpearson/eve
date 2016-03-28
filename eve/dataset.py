@@ -23,7 +23,7 @@ class vidset :
         if fourcc :
             self.fourcc = cv2.VideoWriter_fourcc(*fourcc)
         else :
-            self.fourcc = cv2.VideoWriter_fourcc(*'XVID') 
+            self.fourcc = cv2.VideoWriter_fourcc(*'FFV1') 
         self.camera_in = cv2.VideoCapture(self.filename)
         self.index = 0
 
@@ -37,7 +37,28 @@ class vidset :
         self.camera_in.set(cv2.CAP_PROP_POS_FRAMES, pos)
         return result
 
-    def tloop(self, array, outfile = "default", fps=30, verbose = False) : #refractor
+    def time_slice(self, starttime, endtime, outfile, fps=30, verbose = False) :
+        pos = self.camera_in.get(cv2.CAP_PROP_POS_FRAMES)
+        self.camera_in.set(cv2.CAP_PROP_POS_FRAMES, 0) 
+
+        timestamp = self.camera_in.get(cv2.CAP_PROP_POS_MSEC) #in case it does not start at zero
+        starttime = starttime * 1000 + timestamp  #convert from seconds
+        endtime = endtime * 1000 + timestamp
+
+        self.camera_in.set(cv2.CAP_PROP_POS_MSEC, starttime) #Get the indices of the frames from the timestamp
+        start = self.camera_in.get(cv2.CAP_PROP_POS_FRAMES)
+        self.camera_in.set(cv2.CAP_PROP_POS_MSEC, endtime)
+        end = self.camera_in.get(cv2.CAP_PROP_POS_FRAMES)
+
+        self.camera_in.set(cv2.CAP_PROP_POS_FRAMES, pos)
+
+        to_write = self.loop(None, outfile = outfile, fps = fps, start = start, end = end, verbose = verbose)
+
+        while (to_write is not None) :
+            to_write = self.loop(to_write, verbose=verbose)
+
+
+    def tloop(self, array, outfile = "default", fps=30, verbose = False) : #TODO refractor
         if array is None :
             self.index = 1
             self.camera_in.set(cv2.CAP_PROP_POS_FRAMES, 0)
@@ -67,7 +88,7 @@ class vidset :
                 self.end = len(self)
             else :
                 self.end = end
-            self.camera_in.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            self.camera_in.set(cv2.CAP_PROP_POS_FRAMES, start)
             self.camera_out = cv2.VideoWriter(outfile + '.avi', self.fourcc, fps, (self[0].shape[1], self[0].shape[0]))
             return self.camera_in.read()[1]
 
@@ -78,7 +99,7 @@ class vidset :
         self.camera_out.write(array)
         self.index += 1
         if (verbose) :
-            print_status_bar(self.index, self.end - self.start)
+            print_status_bar(self.index - self.start, self.end - self.start)
         return self.camera_in.read()[1]
 
 
@@ -101,7 +122,7 @@ class buffered_iterator :
         self.outtype = outtype
 
         if (video) :
-            fourcc = cv2.VideoWriter_fourcc(*'XVID') #is there a better format? this will be avi
+            fourcc = cv2.VideoWriter_fourcc(*'FFV1') #is there a better format? this will be avi
             self.camera = cv2.VideoWriter(filename + '.avi',fourcc, fps, (self.dset[0].shape[1], self.dset[0].shape[0]))
 
 
