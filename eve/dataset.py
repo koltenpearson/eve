@@ -122,7 +122,7 @@ class buffered_iterator :
         self.outtype = outtype
 
         if (video) :
-            fourcc = cv2.VideoWriter_fourcc(*'FFV1') #is there a better format? this will be avi
+            fourcc = cv2.VideoWriter_fourcc(*'XVID') #is there a better format? this will be avi
             self.camera = cv2.VideoWriter(filename + '.avi',fourcc, fps, (self.dset[0].shape[1], self.dset[0].shape[0]))
 
 
@@ -210,6 +210,15 @@ class dataset :
 
     def __len__(self) :
         return len(self.data)
+
+    def apply(self, func, outfile) :
+
+        it = buffered_iterator(self, outfile)
+
+        for i in it :
+            i[...] = func(i)
+            print_status_bar(it.index, len(self))
+
 
     ##you can either retreive it by sequential index, like a list 
     # or you can put in a string with the same format as it is saved in

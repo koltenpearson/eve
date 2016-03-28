@@ -154,7 +154,15 @@ def buf() :
         i[...][mask] = 255 
 
 
-print("okay here it is normal")
-#main()
-print("and here it is buffered")
-buf()
+def apply_test() :
+
+    dset = dataset.dataset('data/basil/front', dtype=float)
+
+    def black(image) :
+        image[:,:,0] = 0
+        image[:,:,1] = 0
+        image[:,:,2] = 0
+
+    dset.apply(black, 'black')
+
+apply_test()
