@@ -116,5 +116,3 @@ def main() :
     current_dset.set_dtype(np.uint8)
 
     current_dset.write_images('movement3')
-
-main()

@@ -62,6 +62,4 @@ def main() :
     dset.write_images('movement')
 
 
-pofconcept()
-main()
 

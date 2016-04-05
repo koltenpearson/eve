@@ -4,6 +4,8 @@ from datetime import datetime
 import cv2
 import numpy as np
 import sys
+import queue
+import threading
 
 def print_status_bar(current, total, size=100) :
 
@@ -125,8 +127,6 @@ class buffered_iterator :
             fourcc = cv2.VideoWriter_fourcc(*'XVID') #is there a better format? this will be avi
             self.camera = cv2.VideoWriter(filename + '.avi',fourcc, fps, (self.dset[0].shape[1], self.dset[0].shape[0]))
 
-
-
     def __iter__ (self) :
         return self
 
@@ -159,6 +159,26 @@ class buffered_iterator :
                 self.camera.release()
 
         return self.dset[self.index]
+
+
+class threaded_apply :
+
+    def __init__(self, dset, func, outfile, cachesize = 100, threads = 1) :
+        self.dset = dset
+        self.func = func
+        self.video = video
+        self.outfile = outfile
+        self.lock = threading.Lock()
+        self.current = 0
+        self.cachesize = cachesize
+
+
+    def flush(self) :
+        pass
+
+    def main_loop(self) :
+        pass
+        
 
 
 class dataset :
@@ -211,9 +231,9 @@ class dataset :
     def __len__(self) :
         return len(self.data)
 
-    def apply(self, func, outfile) :
+    def apply(self, func, outfile, video=False) :
 
-        it = buffered_iterator(self, outfile)
+        it = buffered_iterator(self, outfile, video=video)
 
         for i in it :
             i[...] = func(i)

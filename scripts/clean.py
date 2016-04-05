@@ -16,6 +16,38 @@ def gen_bound_checker(image) :
 
     return bound_checker
 
+def process(image) :
+    checker = gen_bound_checker(image)
+
+    traces = []
+
+    for y in range(image.shape[0]) :
+        for x in range(image.shape[1]) :
+            if not (checker(x, y) or trace.in_any_traces(x, y)) :
+                t = trace(x, y, checker)
+                t.trace_bounds()
+                t.fill_bounds()
+                traces.append(t)
+
+    for i,t in enumerate(traces) :
+        if len(t) < 50 :
+            for p in t.points :
+                image[p.y][p.x][0] = 255 
+                image[p.y][p.x][1] = 255
+                image[p.y][p.x][2] = 255
+        else :
+            randcolor = (random.choice(range(255)),random.choice(range(255)),random.choice(range(255)))
+            for p in t.points :
+                image[p.y][p.x][0] = randcolor[0]
+                image[p.y][p.x][1] = randcolor[1]
+                image[p.y][p.x][2] = randcolor[2]
+            image[t.init_p.y][t.init_p.x][0] = 0
+            image[t.init_p.y][t.init_p.x][1] = 0
+            image[t.init_p.y][t.init_p.x][2] = 255
+
+    return image
+
+
 def poc() :
 
     image = dataset.dataset('edge')[2]
@@ -55,4 +87,3 @@ def poc() :
 
     cvutil.comp_images(orig, image)
     
-poc()

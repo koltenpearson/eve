@@ -165,4 +165,3 @@ def apply_test() :
 
     dset.apply(black, 'black')
 
-apply_test()

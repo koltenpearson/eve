@@ -51,8 +51,7 @@ def make_vid() :
 
     vset = dataset.vidset('data/vid_top.avi',fourcc='FFV1')
 
-    image = vset.loop(None, outfile="data/edge")
-
+    image = vset.loop(None, outfile="data/edge") 
     while (image is not None) :
 
         sharp_image = cv2.filter2D(image, -1, big_sharp)
@@ -158,6 +157,25 @@ def poc() :
 
     cvutil.comp_images(result1.astype(np.uint8), result2.astype(np.uint8))
 
+def process(image) :
+    sharp_image = cv2.filter2D(image, -1, big_sharp)
+    blur_image = cv2.filter2D(image, -1, big_med)
+
+    sharp_image = np.clip(sharp_image, 0, 255)
+    blur_image = np.clip(blur_image, 0, 255)
+    result = sharp_image - blur_image
+
+    result[result < -40] = 0 
+    result[result > 40] = 0 
+    result[result != 0] = 255
+
+    mask = (result[...,0] == 0) & (result[...,1] == 0) & (result[...,2] == 0)
+    mask = np.invert(mask)
+    result[mask] = 255
+
+    return result
+
+
 def vein_detect() :
 
     dset = dataset.dataset('data/basil/front', dtype=float)
@@ -203,5 +221,3 @@ def vein_detect() :
 
 
     dset.write_images('edge')
-
-make_vid()

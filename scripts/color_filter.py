@@ -4,6 +4,22 @@ from scipy import ndimage
 import numpy as np
 import cv2
 
+def process(image) :
+    converted = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    h, s, v = cv2.split(converted)
+
+    mask = (h > 45) & (h < 90)
+
+    mask = np.invert(mask)
+
+    v[mask] = 0
+
+    converted = cv2.merge([h,s,v])
+    converted = cv2.cvtColor(converted, cv2.COLOR_HSV2BGR)
+
+    return converted
+
 
 def poc() :
 
@@ -41,4 +57,3 @@ def main() :
 
     dset.write_images('colorf')
 
-main()
