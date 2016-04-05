@@ -1,0 +1,14 @@
+#! /usr/bin/env python
+
+from eve import dataset
+import sys
+
+def main() :
+    sys.path.append('scripts')
+    to_apply = sys.argv[2]
+    module = __import__(to_apply)
+
+    dset = dataset.dataset(sys.argv[1])
+    dset.apply(module.process, 'data/' + to_apply)
+    print()
+main()
