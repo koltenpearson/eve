@@ -19,3 +19,6 @@ def poc() :
 
     cvutil.display_image(cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR))
 
+
+if __name__ == '__main__' :
+    poc()
